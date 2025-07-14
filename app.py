@@ -33,22 +33,44 @@ for i in range(visits):
             ""                                    # Case No.
         ])
     else:
+    
         serial_input = st.text_input(f"Serial Number {i + 1}", key=f"serial_{i}")
         row = df[df["Serial Number"].astype(str) == serial_input]
 
         if not row.empty:
             row = row.iloc[0]
-            st.markdown(f"**Customer:** {row['Customer Name']}")
-            st.markdown(f"**Governorate:** {row['Governorate']}")
-            st.markdown(f"**Address:** {row['Address']}")
-            st.markdown(f"**Model:** {row['Model']}")
+            model = str(row["Model"])
 
+            # Check for CR
+            has_printer = False
+            printer_serial_input = ""
+            printer_row = None
+            if "CR" in model.upper():
+                has_printer = st.checkbox(f"Does Visit {i + 1} have a printer with it?", key=f"printer_check_{i}")
+                if has_printer:
+                    printer_serial_input = st.text_input(f"Printer Serial Number for Visit {i + 1}", key=f"printer_sn_{i}")
+                    printer_df = df[df["Serial Number"].astype(str) == printer_serial_input]
+                    if not printer_df.empty:
+                        printer_row = printer_df.iloc[0]
+                    else:
+                        st.warning("⚠️ Printer serial not found — only main device will be included.")
+
+            # Manual inputs
             task_type = st.text_input(f"Task Type {i+1}", key=f"task_{i}")
             task_status = st.selectbox(f"Task Status {i+1}", ["Complete", "NOT Complete"], key=f"status_{i}")
             visit_type = st.selectbox(f"Type {i+1}", ["PPM", "Service"], key=f"type_{i}")
             work = st.text_area(f"Work Done {i+1}", key=f"work_{i}")
             tech_report = st.text_input(f"Technical Report No. {i+1}", key=f"report_{i}")
 
+            # Build SN and Model fields
+            final_sn = serial_input
+            final_model = model
+
+            if has_printer and printer_row is not None:
+                final_sn = f"{serial_input}, {printer_serial_input}"
+                final_model = f"{model}, {printer_row['Model']}"
+
+            # Append row to output
             filled_data.append([
                 datetime.now().strftime('%Y-%m-%d'),
                 row["Customer Name"],
@@ -59,8 +81,8 @@ for i in range(visits):
                 visit_type,
                 task_status,
                 task_type,
-                row["Model"],
-                serial_input,
+                final_model,
+                final_sn,
                 work,
                 "",
                 tech_report,
