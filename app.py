@@ -40,7 +40,10 @@ for i in range(visits):
         if not row.empty:
             row = row.iloc[0]
             model = str(row["Model"])
-
+            st.markdown(f"**Customer:** {row['Customer Name']}")
+            st.markdown(f"**Governorate:** {row['Governorate']}")
+            st.markdown(f"**Address:** {row['Address']}")
+            st.markdown(f"**Model:** {row['Model']}")
             # Check for CR
             has_printer = False
             printer_serial_input = ""
