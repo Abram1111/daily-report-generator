@@ -59,7 +59,7 @@ for i in range(visits):
             task_type = st.text_input(f"Task Type {i+1}", key=f"task_{i}")
             task_status = st.selectbox(f"Task Status {i+1}", ["Complete", "NOT Complete"], key=f"status_{i}")
             visit_type = st.selectbox(f"Type {i+1}", ["PPM", "Service"], key=f"type_{i}")
-            work = st.text_area(f"Work Done {i+1}", key=f"work_{i}")
+            work = st.text_input(f"Total Working Time {i+1}", key=f"work_{i}")
             tech_report = st.text_input(f"Technical Report No. {i+1}", key=f"report_{i}")
 
             # Build SN and Model fields
