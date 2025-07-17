@@ -9,7 +9,8 @@ import os
 st.title("📝 Daily Visit Report Generator")
 
 # Load source file
-df = pd.read_excel("Data base.xlsx")
+DB_FILE = "Data base.xlsx"
+df = pd.read_excel(DB_FILE)
 
 visits = st.number_input("Number of visits", min_value=1, step=1)
 
@@ -23,11 +24,7 @@ for i in range(visits):
     if is_office:
         filled_data.append([
             datetime.now().strftime('%Y-%m-%d'),
-            "Office",  # Site Name
-            "", "", "", "",  # Governorate, Address, Contact Name, Contact No.
-            "", "", "",  # Type, Task Status, Task Type
-            "", "", "",  # Model, SN, Work
-            "", ""  # Travel, Tech Report, Case No.
+            "Office", "", "", "", "", "", "", "", "", "", "", "", "", ""
         ])
     else:
         serial_input = st.text_input(f"Serial Number {i + 1}", key=f"serial_{i}")
@@ -40,13 +37,14 @@ for i in range(visits):
             st.markdown(f"**Customer:** {row['Customer Name']}")
             st.markdown(f"**Governorate:** {row['Governorate']}")
             st.markdown(f"**Address:** {row['Address']}")
-            st.markdown(f"**Model:** {model}")
+            st.markdown(f"**Model:** {row['Model']}")
 
+            # Printer check if CR device
             has_printer = False
             printer_serial_input = ""
             printer_row = None
             if "CR" in model.upper():
-                has_printer = st.checkbox(f"Does Visit {i + 1} have a printer with it?", key=f"printer_check_{i}")
+                has_printer = st.checkbox(f"Does Visit {i + 1} have a printer?", key=f"printer_check_{i}")
                 if has_printer:
                     printer_serial_input = st.text_input(f"Printer Serial Number for Visit {i + 1}", key=f"printer_sn_{i}")
                     printer_df = df[df["Serial Number"].astype(str) == printer_serial_input]
@@ -55,19 +53,21 @@ for i in range(visits):
                     else:
                         st.warning("⚠️ Printer serial not found — only main device will be included.")
 
+            # Manual inputs
             task_type = st.text_input(f"Task Type {i+1}", key=f"task_{i}")
             task_status = st.selectbox(f"Task Status {i+1}", ["Complete", "NOT Complete"], key=f"status_{i}")
             visit_type = st.selectbox(f"Type {i+1}", ["PPM", "Service"], key=f"type_{i}")
             work = st.text_input(f"Total Working Time {i+1}", key=f"work_{i}")
             tech_report = st.text_input(f"Technical Report No. {i+1}", key=f"report_{i}")
 
+            # Build SN and Model fields
             final_sn = serial_input
             final_model = model
-
             if has_printer and printer_row is not None:
                 final_sn = f"{serial_input}, {printer_serial_input}"
                 final_model = f"{model}, {printer_row['Model']}"
 
+            # Append row
             filled_data.append([
                 datetime.now().strftime('%Y-%m-%d'),
                 row["Customer Name"],
@@ -86,55 +86,39 @@ for i in range(visits):
                 ""
             ])
         else:
-            st.warning("❌ Serial not found.")
-            add_manual = st.checkbox(f"Add this new device manually?", key=f"manual_add_{i}")
-            if add_manual:
-                customer = st.text_input(f"Customer Name {i + 1}", key=f"cust_{i}")
-                gov = st.text_input(f"Governorate {i + 1}", key=f"gov_{i}")
-                address = st.text_input(f"Address {i + 1}", key=f"addr_{i}")
-                contact_name = st.text_input(f"Contact Person {i + 1}", key=f"cp_{i}")
-                contact_no = st.text_input(f"Contact No. {i + 1}", key=f"cno_{i}")
-                model = st.text_input(f"Model {i + 1}", key=f"model_{i}")
+            st.error("❌ Serial not found.")
+            with st.expander("➕ Add New Device"):
+                with st.form(f"manual_add_form_{i}"):
+                    st.info("Please enter full device details:")
 
-                task_type = st.text_input(f"Task Type {i+1}", key=f"task_m_{i}")
-                task_status = st.selectbox(f"Task Status {i+1}", ["Complete", "NOT Complete"], key=f"status_m_{i}")
-                visit_type = st.selectbox(f"Type {i+1}", ["PPM", "Service"], key=f"type_m_{i}")
-                work = st.text_input(f"Total Working Time {i+1}", key=f"work_m_{i}")
-                tech_report = st.text_input(f"Technical Report No. {i+1}", key=f"report_m_{i}")
+                    new_customer = st.text_input("Customer Name", key=f"new_customer_{i}")
+                    new_gov = st.text_input("Governorate", key=f"new_gov_{i}")
+                    new_addr = st.text_input("Address", key=f"new_addr_{i}")
+                    new_contact = st.text_input("Contact Person", key=f"new_contact_{i}")
+                    new_phone = st.text_input("Contact Number", key=f"new_phone_{i}")
+                    new_model = st.text_input("Model", key=f"new_model_{i}")
+                    new_sn = st.text_input("Serial Number", value=serial_input, key=f"new_sn_{i}")
 
-                filled_data.append([
-                    datetime.now().strftime('%Y-%m-%d'),
-                    customer,
-                    gov,
-                    address,
-                    contact_name,
-                    contact_no,
-                    visit_type,
-                    task_status,
-                    task_type,
-                    model,
-                    serial_input,
-                    work,
-                    "",
-                    tech_report,
-                    ""
-                ])
+                    submit_device = st.form_submit_button("✅ Add Device to Database")
 
-                # Save new entry to Excel
-                new_row = {
-                    "Customer Name": customer,
-                    "Governorate": gov,
-                    "Address": address,
-                    "Contact Person 1": contact_name,
-                    "Contact Number 1": contact_no,
-                    "Model": model,
-                    "Serial Number": serial_input
-                }
-                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                df.to_excel("Data base.xlsx", index=False)
-                st.success("✅ New device added to database!")
+                    if submit_device:
+                        if all([new_customer, new_gov, new_addr, new_contact, new_phone, new_model, new_sn]):
+                            new_entry = {
+                                "Customer Name": new_customer,
+                                "Governorate": new_gov,
+                                "Address": new_addr,
+                                "Contact Person 1": new_contact,
+                                "Contact Number 1": new_phone,
+                                "Model": new_model,
+                                "Serial Number": new_sn
+                            }
+                            df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+                            df.to_excel(DB_FILE, index=False)
+                            st.success("✅ Device added successfully! Please re-enter the serial to load it.")
+                        else:
+                            st.error("❌ Please fill all fields before submitting.")
 
-# When ready to export
+# Export logic
 if st.button("Generate Excel Report"):
     if filled_data:
         template = "Daily Report Form.xlsx"
@@ -154,4 +138,4 @@ if st.button("Generate Excel Report"):
         with open(output, "rb") as f:
             st.download_button("📥 Download Report", f, file_name=output)
     else:
-        st.warning("No data to export.")
+        st.warning("⚠️ No data to export.")
